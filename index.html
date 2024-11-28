@@ -5,10 +5,71 @@
     <title>Sprawdź PESEL</title>
 </head>
 <body>
-    <h1>Sprawdź PESEL</h1>
-    <p id="message">Sprawdź PESEL</p>
+    <h1>Skrypt sprawdzający dany numer PESEL</h1>
+    <form id="PESEL" onsubmit="return validatePESEL(event)">
+        <label for="peselInput">Wpisz PESEL (11 cyfr):</label>
+        <input type="text" id="peselInput" maxlength="11" oninput="validateInput()" required>
+        <span id="errorMessage" class="error"></span>
+        <br><br>
+        <button type="submit">Wyślij</button>
+    </form>
 
-    <!-- Dołączanie pliku JavaScript -->
-    <script src="pesel.js"></script>
+    <h2>Wyniki:</h2>
+    <div id="result">
+    </div>
+
+    <script>
+        function validateInput() {
+            let pesel = document.getElementById("peselInput").value;
+            let errorMessage = document.getElementById("errorMessage");
+
+            if (pesel.length === 11 && !isNaN(pesel)) {
+                errorMessage.textContent = "";
+            } else {
+                errorMessage.textContent = "PESEL musi składać się z dokładnie 11 cyfr.";
+            }
+        }
+
+        function validatePESEL(event) {
+            event.preventDefault();  
+
+            let pesel = document.getElementById("peselInput").value;
+            let resultDiv = document.getElementById("result");
+            let errorMessage = document.getElementById("errorMessage");
+
+            if (pesel.length !== 11 || isNaN(pesel)) {
+                errorMessage.textContent = "PESEL musi mieć 11 cyfr.";
+                resultDiv.innerHTML = "";
+                return false;
+            }
+
+            errorMessage.textContent = "";
+
+            let year = parseInt(pesel.substring(0, 2));
+            let month = parseInt(pesel.substring(2, 4));
+            let day = parseInt(pesel.substring(4, 6));
+            let genderCode = parseInt(pesel.charAt(9));  
+
+            let century = Math.floor(month / 20);
+            month = month % 20;
+            if (century === 1) {
+                year += 100;
+            } else if (century === 2) {
+                year += 200;
+            }
+
+            const months = [
+                "styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
+                "lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień"
+            ];
+
+            let gender = genderCode % 2 === 0 ? "kobieta" : "mężczyzna";
+
+            resultDiv.innerHTML = `
+                <p><strong>Data urodzenia:</strong> ${day} ${months[month - 1]} ${year}</p>
+                <p><strong>Płeć:</strong> ${gender}</p>
+            `;
+        }
+    </script>
 </body>
 </html>
