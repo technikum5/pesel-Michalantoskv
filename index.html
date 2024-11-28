@@ -1,75 +1,107 @@
+<!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sprawdź PESEL</title>
+    <title>Sprawdzanie numeru PESEL</title>
 </head>
 <body>
-    <h1>Skrypt sprawdzający dany numer PESEL</h1>
-    <form id="PESEL" onsubmit="return validatePESEL(event)">
-        <label for="peselInput">Wpisz PESEL (11 cyfr):</label>
-        <input type="text" id="peselInput" maxlength="11" oninput="validateInput()" required>
-        <span id="errorMessage" class="error"></span>
-        <br><br>
-        <button type="submit">Wyślij</button>
-    </form>
 
-    <h2>Wyniki:</h2>
-    <div id="result">
+    <div class="container">
+        <h1>Sprawdź informacje z numeru PESEL</h1>
+
+        <!-- Wprowadzanie numeru PESEL -->
+        <div>
+            <label for="peselInput">Podaj numer PESEL:</label>
+            <input type="text" id="peselInput" maxlength="11" placeholder="Wprowadź PESEL" />
+            <button onclick="showPESELInfo()">Sprawdź</button>
+        </div>
+
+        <!-- Wyniki sprawdzania -->
+        <h2>Wyniki:</h2>
+        <div id="result" class="result"></div>
     </div>
 
     <script>
-        function validateInput() {
-            let pesel = document.getElementById("peselInput").value;
-            let errorMessage = document.getElementById("errorMessage");
-
-            if (pesel.length === 11 && !isNaN(pesel)) {
-                errorMessage.textContent = "";
-            } else {
-                errorMessage.textContent = "PESEL musi składać się z dokładnie 11 cyfr.";
-            }
-        }
-
-        function validatePESEL(event) {
-            event.preventDefault();  
-
-            let pesel = document.getElementById("peselInput").value;
-            let resultDiv = document.getElementById("result");
-            let errorMessage = document.getElementById("errorMessage");
-
-            if (pesel.length !== 11 || isNaN(pesel)) {
-                errorMessage.textContent = "PESEL musi mieć 11 cyfr.";
-                resultDiv.innerHTML = "";
+        // Funkcja walidująca numer PESEL (11 cyfr)
+        function validatePESEL(pesel) {
+            if (pesel.length !== 11 || !/^\d+$/.test(pesel)) {
                 return false;
             }
 
-            errorMessage.textContent = "";
+            const weights = [1, 3, 7, 9, 1, 3, 7, 9, 1, 3];
+            let sum = 0;
 
-            let year = parseInt(pesel.substring(0, 2));
-            let month = parseInt(pesel.substring(2, 4));
-            let day = parseInt(pesel.substring(4, 6));
-            let genderCode = parseInt(pesel.charAt(9));  
-
-            let century = Math.floor(month / 20);
-            month = month % 20;
-            if (century === 1) {
-                year += 100;
-            } else if (century === 2) {
-                year += 200;
+            for (let i = 0; i < 10; i++) {
+                sum += parseInt(pesel[i]) * weights[i];
             }
 
-            const months = [
-                "styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
-                "lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień"
-            ];
+            const controlNumber = (10 - (sum % 10)) % 10;
+            return controlNumber === parseInt(pesel[10]);
+        }
 
-            let gender = genderCode % 2 === 0 ? "kobieta" : "mężczyzna";
+        // Tablica z nazwami miesięcy
+        const months = [
+            "Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec",
+            "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"
+        ];
 
+        // Funkcja wyciągająca datę urodzenia z numeru PESEL
+        function extractBirthDateFromPESEL(pesel) {
+            if (!validatePESEL(pesel)) return null;
+
+            const yearPart = pesel.substring(0, 2);
+            const monthPart = pesel.substring(2, 4);
+            const dayPart = pesel.substring(4, 6);
+
+            let year = parseInt(yearPart);
+            let month = parseInt(monthPart);
+            let day = parseInt(dayPart);
+
+            // Ustalenie odpowiedniego wieku na podstawie miesiąca
+            if (month > 80 && month <= 92) {
+                year += 1800;
+                month -= 80;
+            } else if (month > 20 && month <= 32) {
+                year += 2000;
+                month -= 20;
+            } else {
+                year += 1900;
+            }
+
+            return `${dayPart} ${months[month - 1]} ${year}`;
+        }
+
+        // Funkcja wyciągająca płeć z numeru PESEL
+        function extractGenderFromPESEL(pesel) {
+            if (!validatePESEL(pesel)) return null;
+
+            const genderDigit = parseInt(pesel[9]);
+            return genderDigit % 2 === 0 ? 'Kobieta' : 'Mężczyzna';
+        }
+
+        // Funkcja do wyświetlania wyników na stronie
+        function showPESELInfo() {
+            const pesel = document.getElementById('peselInput').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = ''; // Czyszczenie poprzednich wyników
+
+            if (!validatePESEL(pesel)) {
+                resultDiv.innerHTML = '<p class="error">Nieprawidłowy numer PESEL.</p>';
+                return;
+            }
+
+            // Wyciąganie daty urodzenia i płci
+            const birthDate = extractBirthDateFromPESEL(pesel);
+            const gender = extractGenderFromPESEL(pesel);
+
+            // Wyświetlanie wyników na stronie
             resultDiv.innerHTML = `
-                <p><strong>Data urodzenia:</strong> ${day} ${months[month - 1]} ${year}</p>
+                <p><strong>Data urodzenia:</strong> ${birthDate}</p>
                 <p><strong>Płeć:</strong> ${gender}</p>
             `;
         }
     </script>
+
 </body>
 </html>
